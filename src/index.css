@@ -50,6 +50,7 @@ body {
   color: var(--text-primary);
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -78,6 +79,7 @@ body {
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   background-image: 
@@ -273,7 +275,7 @@ body {
   background-color: rgba(0, 0, 0, 0.2);
   color: var(--text-primary);
   font-family: monospace;
-  font-size: 0.85rem;
+  font-size: 16px;
   transition: all var(--transition-fast);
 }
 
@@ -584,7 +586,7 @@ body {
 
 /* Bottom Chat Input Bar */
 .input-area-container {
-  padding: 16px 24px 24px 24px;
+  padding: 16px 24px calc(24px + env(safe-area-inset-bottom)) 24px;
   background-image: linear-gradient(to top, var(--bg-primary) 70%, transparent);
   flex-shrink: 0;
 }
@@ -617,7 +619,7 @@ body {
   padding: 16px 60px 16px 20px;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 0.95rem;
+  font-size: 16px;
   line-height: 1.5;
   max-height: 200px;
   min-height: 52px;
@@ -682,6 +684,7 @@ body {
   right: 0;
   width: 380px;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
@@ -702,6 +705,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 190;
@@ -761,17 +765,17 @@ body {
 }
 
 .settings-input,
-.settings-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  background-color: rgba(0, 0, 0, 0.2);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  transition: all var(--transition-fast);
-}
+  .settings-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    transition: all var(--transition-fast);
+  }
 
 .settings-textarea {
   resize: vertical;
@@ -817,7 +821,7 @@ body {
   border: 1px solid var(--border-color);
   background-color: rgba(0, 0, 0, 0.2);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 16px;
   transition: all var(--transition-fast);
 }
 
@@ -1024,7 +1028,8 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     transform: translateX(-100%);
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
   }
