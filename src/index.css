@@ -1111,3 +1111,24 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* KaTeX math rendering */
+.math-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 12px 4px;
+  margin: 12px 0;
+}
+.math-display > .katex {
+  font-size: 1.1em;
+}
+.math-inline {
+  padding: 0 1px;
+}
+.markdown-content .katex {
+  color: var(--text-primary);
+}
+.markdown-content .katex-display {
+  margin: 0;
+}

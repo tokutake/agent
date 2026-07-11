@@ -1,5 +1,32 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
+import katex from 'katex';
+
+/* Render a TeX string to KaTeX HTML. Streaming-safe (throwOnError: false). */
+function renderMath(tex: string, displayMode: boolean): React.ReactNode {
+  try {
+    const html = katex.renderToString(tex, {
+      displayMode,
+      throwOnError: false,
+      output: 'html',
+    });
+    return (
+      <span
+        className={displayMode ? 'math-display' : 'math-inline'}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  } catch {
+    return <code>{displayMode ? `$$${tex}$$` : `$${tex}$`}</code>;
+  }
+}
+
+/* Normalize \[ \] -> $$ $$ and \( \) -> $ $ so all math uses dollar delimiters. */
+function normalizeMathDelimiters(text: string): string {
+  return text
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => `$$${tex}$$`)
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => `$${tex}$`);
+}
 
 interface MarkdownProps {
   content: string;
@@ -68,6 +95,30 @@ const CodeBlock: React.FC<{ rawCodeBlock: string }> = ({ rawCodeBlock }) => {
 
 /* Text Block Component for paragraph and other formatting */
 const TextBlock: React.FC<{ text: string }> = ({ text }) => {
+  const normalized = normalizeMathDelimiters(text);
+
+  // Split out display math $$...$$ and render those as standalone blocks.
+  const segments = normalized.split(/(\$\$[\s\S]+?\$\$)/g);
+  if (segments.length > 1) {
+    return (
+      <>
+        {segments.map((seg, i) => {
+          const m = seg.match(/^\$\$([\s\S]+?)\$\$$/);
+          if (m) {
+            if (!m[1].trim()) return null;
+            return <div key={`dm-${i}`}>{renderMath(m[1], true)}</div>;
+          }
+          return seg ? <TextBlockInner key={`t-${i}`} text={seg} /> : null;
+        })}
+      </>
+    );
+  }
+
+  return <TextBlockInner text={normalized} />;
+};
+
+/* Inner text renderer: paragraphs, lists, headers, blockquotes, tables. */
+const TextBlockInner: React.FC<{ text: string }> = ({ text }) => {
   // First, check if this block contains a table
   if (text.includes('|') && text.split('\n').some(line => line.trim().startsWith('|') && line.includes('---'))) {
     return <TableBlock text={text} />;
@@ -194,11 +245,14 @@ const TableBlock: React.FC<{ text: string }> = ({ text }) => {
 /* Render inline bold, italic, code tags */
 function renderInline(text: string): React.ReactNode[] {
   // Regexes to extract inline formatting
-  // **bold**, *italic*, `code`, [text](url)
-  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\))/g;
+  // **bold**, *italic*, `code`, [text](url), $inline math$
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\)|\$[^$\n]+?\$)/g;
   const parts = text.split(regex);
 
   return parts.map((part, index) => {
+    if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
+      return <React.Fragment key={index}>{renderMath(part.slice(1, -1), false)}</React.Fragment>;
+    }
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={index}>{part.slice(2, -2)}</strong>;
     }
