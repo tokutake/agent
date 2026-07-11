@@ -888,6 +888,67 @@ body {
   margin-top: 4px;
 }
 
+/* Two-step provider + model selects */
+.model-select-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 10px 0 4px;
+}
+
+.model-select {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.model-select:focus {
+  border-color: var(--accent-primary);
+}
+
+.model-select option {
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+.model-current-meta {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Provider (company) grouping in the model picker */
+.model-group + .model-group {
+  margin-top: 4px;
+}
+
+.model-group-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 12px 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+}
+
 /* Markdown Rendering Custom Styles */
 .markdown-content p {
   margin-bottom: 12px;

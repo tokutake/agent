@@ -4,15 +4,10 @@ import { ChatArea } from './components/ChatArea';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { ChatSession, Message, OpenRouterModel } from './types/chat';
 import { fetchModels, streamCompletion } from './services/openrouter';
+import { FALLBACK_MODELS, filterToBlacklist } from './lib/models';
+import { cleanModelName } from './lib/providers';
 
-const DEFAULT_MODELS: OpenRouterModel[] = [
-  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', context_length: 1048576, pricing: { prompt: '0.000000075', completion: '0.0000003' } },
-  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', context_length: 2097152, pricing: { prompt: '0.00000125', completion: '0.000005' } },
-  { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct', context_length: 131072, pricing: { prompt: '0.0000006', completion: '0.0000006' } },
-  { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', context_length: 64000, pricing: { prompt: '0.00000014', completion: '0.00000028' } },
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', context_length: 200000, pricing: { prompt: '0.000003', completion: '0.000015' } },
-  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', context_length: 128000, pricing: { prompt: '0.00000015', completion: '0.0000006' } }
-];
+const DEFAULT_MODELS: OpenRouterModel[] = FALLBACK_MODELS;
 
 export default function App() {
   // --- LocalStorage State Initialization ---
@@ -36,7 +31,7 @@ export default function App() {
         id: initId,
         title: 'New Chat',
         messages: [],
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3.5-flash',
         systemPrompt: 'You are Nova, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
         temperature: 0.7,
         createdAt: Date.now(),
@@ -96,11 +91,13 @@ export default function App() {
     try {
       const fetched = await fetchModels(keyToUse);
       if (fetched && fetched.length > 0) {
-        // Filter out duplicate or broken models, sort by name
-        const cleanModels = fetched
-          .filter((m) => m.id && m.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setModels(cleanModels);
+        // Keep only the newest version of each model family (blacklist
+        // approach): drop image/audio/experimental models and older
+        // releases, but never require a hand-maintained whitelist.
+        const filtered = filterToBlacklist(fetched);
+        if (filtered.length > 0) {
+          setModels(filtered);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch models, keeping current list:', e);
@@ -131,7 +128,7 @@ export default function App() {
   const activeModelName = useMemo(() => {
     if (!activeSession) return 'None';
     const found = models.find((m) => m.id === activeSession.model);
-    return found ? found.name : activeSession.model.split('/').pop() || activeSession.model;
+    return found ? cleanModelName(found.name) : activeSession.model.split('/').pop() || activeSession.model;
   }, [activeSession, models]);
 
   const handleSelectSession = (id: string) => {
@@ -144,7 +141,7 @@ export default function App() {
       id: newId,
       title: 'New Chat',
       messages: [],
-      model: activeSession?.model || 'google/gemini-2.5-flash',
+      model: activeSession?.model || 'google/gemini-3.5-flash',
       systemPrompt: activeSession?.systemPrompt || 'You are Nova, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
       temperature: activeSession?.temperature ?? 0.7,
       createdAt: Date.now(),
@@ -163,7 +160,7 @@ export default function App() {
             id: fallbackId,
             title: 'New Chat',
             messages: [],
-            model: 'google/gemini-2.5-flash',
+            model: 'google/gemini-3.5-flash',
             systemPrompt: 'You are Nova, a helpful and highly creative AI assistant.',
             temperature: 0.7,
             createdAt: Date.now(),
@@ -499,7 +496,7 @@ export default function App() {
       <SettingsPanel
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        selectedModel={activeSession?.model || 'google/gemini-2.5-flash'}
+        selectedModel={activeSession?.model || 'google/gemini-3.5-flash'}
         onModelChange={handleModelChange}
         systemPrompt={activeSession?.systemPrompt || ''}
         onSystemPromptChange={handleSystemPromptChange}

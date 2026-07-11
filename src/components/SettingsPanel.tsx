@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { X, Search, RefreshCw, AlertCircle, Info, ChevronDown } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import type { OpenRouterModel } from '../types/chat';
+import { getProviderName, PROVIDER_ORDER, cleanModelName } from '../lib/providers';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -35,31 +36,45 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onRefreshModels,
   apiKey,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
+  // Companies (providers) present in the model list, in display order.
+  const groupedProviders = useMemo(() => {
+    const groups = new Map<string, OpenRouterModel[]>();
+    for (const m of models) {
+      const provider = getProviderName(m.id);
+      const arr = groups.get(provider);
+      if (arr) arr.push(m);
+      else groups.set(provider, [m]);
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const names = Array.from(groups.keys()).sort((a, b) => {
+      const ia = PROVIDER_ORDER.indexOf(a);
+      const ib = PROVIDER_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    return names.map((name) => ({
+      name,
+      models: groups
+        .get(name)!
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }));
+  }, [models]);
 
-  const filteredModels = useMemo(() => {
-    if (!searchTerm.trim()) return models;
-    const term = searchTerm.toLowerCase();
-    return models.filter(
-      (m) =>
-        m.name.toLowerCase().includes(term) ||
-        m.id.toLowerCase().includes(term)
-    );
-  }, [models, searchTerm]);
+  // Initially select the company of the active model (fallback: first one).
+  const [selectedProvider, setSelectedProvider] = useState<string>(() => {
+    const initial = models.find((m) => m.id === selectedModel);
+    const name = initial ? getProviderName(initial.id) : groupedProviders[0]?.name ?? '';
+    // Ensure the company actually exists in the list; otherwise pick the first.
+    return groupedProviders.some((g) => g.name === name) ? name : (groupedProviders[0]?.name ?? '');
+  });
 
+  // Models for the currently selected company.
+  const modelsForProvider = useMemo(() => {
+    const group = groupedProviders.find((g) => g.name === selectedProvider);
+    return group ? group.models : [];
+  }, [groupedProviders, selectedProvider]);
   const activeModel = useMemo(() => {
     return models.find((m) => m.id === selectedModel) || {
       id: selectedModel,
@@ -118,82 +133,50 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               )}
             </div>
             
-            <div className="model-picker-container" ref={dropdownRef}>
-              <div 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'rgba(0,0,0,0.2)',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setShowDropdown(!showDropdown)}
+            <div className="model-picker-container">
+              {/* Company (provider) selector */}
+              <label className="model-select-label" htmlFor="provider-select">Company</label>
+              <select
+                id="provider-select"
+                className="model-select"
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
               >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>
-                    {activeModel.name}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {activeModel.id}
-                  </div>
+                {groupedProviders.map((g) => (
+                  <option key={g.name} value={g.name}>
+                    {g.name} ({g.models.length})
+                  </option>
+                ))}
+              </select>
+
+              {/* Model selector for the chosen company */}
+              <label className="model-select-label" htmlFor="model-select">Model</label>
+              <select
+                id="model-select"
+                className="model-select"
+                value={selectedModel}
+                onChange={(e) => onModelChange(e.target.value)}
+              >
+                {modelsForProvider.length === 0 ? (
+                  <option value="" disabled>No models found</option>
+                ) : (
+                  modelsForProvider.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {cleanModelName(m.name)} — In: {formatPrice(m.pricing.prompt)} / Out: {formatPrice(m.pricing.completion)}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <div className="model-current-meta">
+                <span className="model-option-id">{activeModel.id}</span>
+                <div className="model-option-meta">
+                  <span>Context: {(activeModel.context_length / 1024).toFixed(0)}k</span>
+                  <span>
+                    In: {formatPrice(activeModel.pricing.prompt)} | Out: {formatPrice(activeModel.pricing.completion)} (/1M)
+                  </span>
                 </div>
-                <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
               </div>
-
-              {showDropdown && (
-                <div className="model-list-dropdown">
-                  <div style={{ padding: '8px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
-                      className="model-search-input"
-                      placeholder="Search models..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        padding: '4px 0',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        width: '100%',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
-                    {filteredModels.length === 0 ? (
-                      <div style={{ padding: '12px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                        No models found
-                      </div>
-                    ) : (
-                      filteredModels.map((m) => (
-                        <div
-                          key={m.id}
-                          className={`model-option ${m.id === selectedModel ? 'selected' : ''}`}
-                          onClick={() => {
-                            onModelChange(m.id);
-                            setShowDropdown(false);
-                          }}
-                        >
-                          <span className="model-option-name">{m.name}</span>
-                          <span className="model-option-id">{m.id}</span>
-                          <div className="model-option-meta">
-                            <span>Context: {(m.context_length / 1024).toFixed(0)}k</span>
-                            <span>
-                              In: {formatPrice(m.pricing.prompt)} | Out: {formatPrice(m.pricing.completion)} (/1M)
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
             {!apiKey && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#eab308', fontSize: '0.75rem', marginTop: '4px' }}>
