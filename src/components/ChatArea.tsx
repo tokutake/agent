@@ -118,6 +118,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   const suggestions = [
+    { title: 'Gradient flow', text: 'How long can be the path of a gradient flow on a convext function given the constraint that it stays within the unit Euclidean ball in dimention n?' },
     { title: 'Create React Component', text: 'Write a modern React counter component using Hooks and CSS modules.' },
     { title: 'Explain Quantum Computing', text: 'Explain how a quantum computer works in simple terms for a 10-year old.' },
     { title: 'Optimize Code Performance', text: 'Here is a JavaScript loop. Suggest how to optimize it for speed: \n```js\nfor(let i=0; i<arr.length; i++) { ... }\n```' },
