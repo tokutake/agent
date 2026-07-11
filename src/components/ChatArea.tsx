@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Bot, Sparkles, Menu, Settings2, 
+  Send, User, Bot, Bird, Menu, Settings2, 
   Copy, Check, Edit2, RotateCw, ArrowDown, ArrowUpRight, AlertTriangle 
 } from 'lucide-react';
 import type { ChatSession, Message } from '../types/chat';
@@ -136,7 +136,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             <Menu size={20} />
           </button>
           <div>
-            <h1 className="chat-header-title">{session?.title || 'Nova Chat'}</h1>
+            <h1 className="chat-header-title">{session?.title || 'Pythia'}</h1>
             {hasMessages && (
               <span className="active-model-badge">{activeModelName}</span>
             )}
@@ -160,9 +160,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         {!hasMessages ? (
           <div className="welcome-screen">
             <div className="welcome-logo">
-              <Sparkles size={36} />
+              <Bird size={36} />
             </div>
-            <h1>Nova AI Chat</h1>
+            <h1>Pythia</h1>
             <p>
               An elegant, fully customized interface built for seamless interaction. Connect to open models on OpenRouter.
             </p>
@@ -338,24 +338,26 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Input area */}
       <div className="input-area-container">
         <div className="input-bar-wrapper">
-          <textarea
-            ref={textareaRef}
-            className="input-textarea"
-            placeholder={apiKey ? "Message Nova..." : "Please enter your OpenRouter API key to start chatting..."}
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={!apiKey || isStreaming}
-            rows={1}
-          />
-          <button
-            className="send-message-btn"
-            onClick={handleSend}
-            disabled={!inputText.trim() || isStreaming || !apiKey}
-            aria-label="Send message"
-          >
-            <Send size={16} />
-          </button>
+          <div className="input-row">
+            <textarea
+              ref={textareaRef}
+              className="input-textarea"
+              placeholder={apiKey ? "Message Pythia..." : "Please enter your OpenRouter API key to start chatting..."}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={!apiKey || isStreaming}
+              rows={1}
+            />
+            <button
+              className="send-message-btn"
+              onClick={handleSend}
+              disabled={!inputText.trim() || isStreaming || !apiKey}
+              aria-label="Send message"
+            >
+              <Send size={16} />
+            </button>
+          </div>
           
           <div className="input-footer-settings">
             <span 

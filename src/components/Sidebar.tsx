@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Plus, Trash2, Edit3, Eye, EyeOff, Sparkles, X } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Edit3, Eye, EyeOff, Bird, X } from 'lucide-react';
 import type { ChatSession } from '../types/chat';
 
 interface SidebarProps {
@@ -64,8 +64,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="brand">
-          <Sparkles size={20} className="brand-icon" />
-          <span>Nova Chat</span>
+          <Bird size={20} className="brand-icon" />
+          <span>Pythia</span>
         </div>
         <button 
           className="menu-toggle" 
@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <div className="session-info">
-              <MessageSquare size={16} style={{ flexShrink: 0, color: session.id === activeSessionId ? '#818cf8' : 'var(--text-muted)' }} />
+              <MessageSquare size={16} style={{ flexShrink: 0, color: session.id === activeSessionId ? '#f5c869' : 'var(--text-muted)' }} />
               {editingId === session.id ? (
                 <input
                   ref={editInputRef}

@@ -253,8 +253,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             style={{
               padding: '12px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: 'rgba(6, 182, 212, 0.05)',
-              border: '1px solid rgba(6, 182, 212, 0.15)',
+              backgroundColor: 'rgba(245, 200, 105, 0.05)',
+              border: '1px solid rgba(245, 200, 105, 0.15)',
               display: 'flex',
               gap: '10px',
               fontSize: '0.8rem',
