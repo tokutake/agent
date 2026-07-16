@@ -261,6 +261,14 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     </div>
                   ) : (
                     <>
+                      {msg.reasoning && msg.reasoning.trim() && (
+                        <details className="reasoning-block" open>
+                          <summary>Reasoning</summary>
+                          <div className="reasoning-content">
+                            <Markdown content={msg.reasoning} />
+                          </div>
+                        </details>
+                      )}
                       <Markdown content={msg.content} />
                       {/* Streaming cursor if it is the last message and is streaming */}
                       {!isUser && isStreaming && index === session.messages.length - 1 && (

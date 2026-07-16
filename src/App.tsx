@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { SettingsPanel } from './components/SettingsPanel';
-import type { ChatSession, Message, OpenRouterModel } from './types/chat';
+import type { ChatSession, Message, OpenRouterModel, ReasoningMode } from './types/chat';
 import { fetchModels, streamCompletion } from './services/openrouter';
 import { FALLBACK_MODELS, filterToBlacklist } from './lib/models';
 import { cleanModelName } from './lib/providers';
@@ -34,6 +34,7 @@ export default function App() {
         model: 'google/gemini-3.5-flash',
         systemPrompt: 'You are Pythia, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
         temperature: 0.7,
+        reasoningMode: 'auto',
         createdAt: Date.now(),
       },
     ];
@@ -144,6 +145,7 @@ export default function App() {
       model: activeSession?.model || 'google/gemini-3.5-flash',
       systemPrompt: activeSession?.systemPrompt || 'You are Pythia, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
       temperature: activeSession?.temperature ?? 0.7,
+      reasoningMode: activeSession?.reasoningMode || 'auto',
       createdAt: Date.now(),
     };
     setSessions((prev) => [newSession, ...prev]);
@@ -163,6 +165,7 @@ export default function App() {
             model: 'google/gemini-3.5-flash',
             systemPrompt: 'You are Pythia, a helpful and highly creative AI assistant.',
             temperature: 0.7,
+            reasoningMode: 'auto',
             createdAt: Date.now(),
           },
         ];
@@ -207,6 +210,12 @@ export default function App() {
   const handleMaxTokensChange = (maxTokens: number | undefined) => {
     setSessions((prev) =>
       prev.map((s) => (s.id === activeSessionId ? { ...s, maxTokens } : s))
+    );
+  };
+
+  const handleReasoningChange = (reasoningMode: ReasoningMode) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, reasoningMode } : s))
     );
   };
 
@@ -263,6 +272,20 @@ export default function App() {
       systemPrompt: activeSession.systemPrompt,
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
+      reasoningMode: activeSession.reasoningMode,
+      onReasoning: (chunk) => {
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== activeSession.id) return s;
+            return {
+              ...s,
+              messages: s.messages.map((m) =>
+                m.id === assistantMessageId ? { ...m, reasoning: (m.reasoning || '') + chunk } : m
+              ),
+            };
+          })
+        );
+      },
       onChunk: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -343,6 +366,20 @@ export default function App() {
       systemPrompt: activeSession.systemPrompt,
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
+      reasoningMode: activeSession.reasoningMode,
+      onReasoning: (chunk) => {
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== activeSession.id) return s;
+            return {
+              ...s,
+              messages: s.messages.map((m) =>
+                m.id === assistantMessageId ? { ...m, reasoning: (m.reasoning || '') + chunk } : m
+              ),
+            };
+          })
+        );
+      },
       onChunk: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -426,6 +463,20 @@ export default function App() {
       systemPrompt: activeSession.systemPrompt,
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
+      reasoningMode: activeSession.reasoningMode,
+      onReasoning: (chunk) => {
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== activeSession.id) return s;
+            return {
+              ...s,
+              messages: s.messages.map((m) =>
+                m.id === assistantMessageId ? { ...m, reasoning: (m.reasoning || '') + chunk } : m
+              ),
+            };
+          })
+        );
+      },
       onChunk: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -504,6 +555,8 @@ export default function App() {
         onTemperatureChange={handleTemperatureChange}
         maxTokens={activeSession?.maxTokens}
         onMaxTokensChange={handleMaxTokensChange}
+        reasoningMode={activeSession?.reasoningMode || 'auto'}
+        onReasoningChange={handleReasoningChange}
         models={models}
         isLoadingModels={isLoadingModels}
         onRefreshModels={() => handleLoadModels()}

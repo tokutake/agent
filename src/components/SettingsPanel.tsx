@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, RefreshCw, AlertCircle, Info } from 'lucide-react';
-import type { OpenRouterModel } from '../types/chat';
+import type { OpenRouterModel, ReasoningMode } from '../types/chat';
+import { REASONING_MODES } from '../types/chat';
 import { getProviderName, PROVIDER_ORDER, cleanModelName } from '../lib/providers';
 
 interface SettingsPanelProps {
@@ -14,6 +15,8 @@ interface SettingsPanelProps {
   onTemperatureChange: (temp: number) => void;
   maxTokens: number | undefined;
   onMaxTokensChange: (tokens: number | undefined) => void;
+  reasoningMode: ReasoningMode;
+  onReasoningChange: (mode: ReasoningMode) => void;
   models: OpenRouterModel[];
   isLoadingModels: boolean;
   onRefreshModels: () => void;
@@ -31,6 +34,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onTemperatureChange,
   maxTokens,
   onMaxTokensChange,
+  reasoningMode,
+  onReasoningChange,
   models,
   isLoadingModels,
   onRefreshModels,
@@ -246,9 +251,31 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <span className="settings-description">
               Sets the upper limit of tokens to generate. Leave at 0 (Auto) for model defaults.
             </span>
-          </div>
+            </div>
 
-          {/* Context Length info */}
+            {/* Reasoning Mode */}
+            <div className="settings-group">
+              <div className="settings-label">
+                <span>Reasoning</span>
+                <span className="slider-val">{reasoningMode}</span>
+              </div>
+              <select
+                className="model-select"
+                value={reasoningMode}
+                onChange={(e) => onReasoningChange(e.target.value as ReasoningMode)}
+              >
+                {REASONING_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <span className="settings-description">
+                Controls the model's actual thinking. "Auto" lets the model decide; "Off" disables reasoning; the rest set reasoning effort. Only effective on reasoning-capable models.
+              </span>
+            </div>
+
+            {/* Context Length info */}
           <div 
             style={{
               padding: '12px',

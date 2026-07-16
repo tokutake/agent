@@ -1138,3 +1138,47 @@ body {
 .markdown-content .katex-display {
   margin: 0;
 }
+
+/* Reasoning (thinking) block inside assistant messages */
+.reasoning-block {
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.reasoning-block > summary {
+  cursor: pointer;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent-secondary);
+  user-select: none;
+  list-style: none;
+}
+
+.reasoning-block > summary::-webkit-details-marker {
+  display: none;
+}
+
+.reasoning-block > summary::before {
+  content: '▸ ';
+}
+
+.reasoning-block[open] > summary::before {
+  content: '▾ ';
+}
+
+.reasoning-content {
+  padding: 0 12px 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+}
+
+.reasoning-content .markdown-content {
+  opacity: 0.85;
+}

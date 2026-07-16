@@ -1,4 +1,4 @@
-import type { Message, OpenRouterModel } from '../types/chat';
+import type { Message, OpenRouterModel, ReasoningMode } from '../types/chat';
 
 const BASE_URL = 'https://openrouter.ai/api/v1';
 
@@ -34,9 +34,31 @@ interface StreamOptions {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
+  reasoningMode?: ReasoningMode;
   onChunk: (content: string) => void;
+  onReasoning?: (reasoning: string) => void;
   onDone: () => void;
   onError: (error: Error) => void;
+}
+
+/**
+ * Build the OpenRouter `reasoning` request param from a ReasoningMode.
+ * Returns undefined for 'auto' (omit the param so the model decides).
+ */
+function buildReasoningParam(mode: ReasoningMode = 'auto'): Record<string, unknown> | undefined {
+  switch (mode) {
+    case 'off':
+      return { reasoning: { exclude: true } };
+    case 'auto':
+      return undefined;
+    case 'low':
+    case 'medium':
+    case 'high':
+    case 'max':
+      return { reasoning: { effort: mode } };
+    default:
+      return undefined;
+  }
 }
 
 export async function streamCompletion({
@@ -46,7 +68,9 @@ export async function streamCompletion({
   systemPrompt,
   temperature = 0.7,
   maxTokens,
+  reasoningMode = 'auto',
   onChunk,
+  onReasoning,
   onDone,
   onError,
 }: StreamOptions) {
@@ -69,6 +93,19 @@ export async function streamCompletion({
       }))
     );
 
+    // Build the request body, adding the normalized `reasoning` param when set.
+    const requestBody: Record<string, unknown> = {
+      model,
+      messages: formattedMessages,
+      temperature,
+      max_tokens: maxTokens,
+      stream: true,
+    };
+    const reasoningParam = buildReasoningParam(reasoningMode);
+    if (reasoningParam) {
+      Object.assign(requestBody, reasoningParam);
+    }
+
     const response = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -77,13 +114,7 @@ export async function streamCompletion({
         'HTTP-Referer': window.location.origin,
         'X-Title': 'Premium AI Chat',
       },
-      body: JSON.stringify({
-        model,
-        messages: formattedMessages,
-        temperature,
-        max_tokens: maxTokens,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -126,6 +157,10 @@ export async function streamCompletion({
               return;
             }
             const data = JSON.parse(jsonStr);
+            const reasoning = data.choices?.[0]?.delta?.reasoning || '';
+            if (reasoning && onReasoning) {
+              onReasoning(reasoning);
+            }
             const content = data.choices?.[0]?.delta?.content || '';
             if (content) {
               onChunk(content);
@@ -143,6 +178,10 @@ export async function streamCompletion({
         const jsonStr = buffer.slice(6).trim();
         if (jsonStr !== '[DONE]') {
           const data = JSON.parse(jsonStr);
+          const reasoning = data.choices?.[0]?.delta?.reasoning || '';
+          if (reasoning && onReasoning) {
+            onReasoning(reasoning);
+          }
           const content = data.choices?.[0]?.delta?.content || '';
           if (content) {
             onChunk(content);
