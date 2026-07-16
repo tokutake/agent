@@ -92,9 +92,7 @@ export default function App() {
     try {
       const fetched = await fetchModels(keyToUse);
       if (fetched && fetched.length > 0) {
-        // Keep only the newest version of each model family (blacklist
-        // approach): drop image/audio/experimental models and older
-        // releases, but never require a hand-maintained whitelist.
+        // Drop noise (image/audio/experimental models) and sort newest-first.
         const filtered = filterToBlacklist(fetched);
         if (filtered.length > 0) {
           setModels(filtered);

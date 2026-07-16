@@ -63,7 +63,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       models: groups
         .get(name)!
         .slice()
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .sort((a, b) => (b.created ?? 0) - (a.created ?? 0)),
     }));
   }, [models]);
 
@@ -145,7 +145,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 id="provider-select"
                 className="model-select"
                 value={selectedProvider}
-                onChange={(e) => setSelectedProvider(e.target.value)}
+                onChange={(e) => {
+                  const nextProvider = e.target.value;
+                  setSelectedProvider(nextProvider);
+                  // Auto-select the first model of the newly chosen company so the
+                  // model dropdown reflects a valid selection for that company.
+                  const nextGroup = groupedProviders.find((g) => g.name === nextProvider);
+                  const firstModel = nextGroup?.models[0];
+                  if (firstModel) {
+                    onModelChange(firstModel.id);
+                  }
+                }}
               >
                 {groupedProviders.map((g) => (
                   <option key={g.name} value={g.name}>

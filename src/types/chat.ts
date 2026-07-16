@@ -38,6 +38,7 @@ export interface OpenRouterModel {
   name: string;
   description?: string;
   context_length: number;
+  created?: number;
   pricing: {
     prompt: string;
     completion: string;
