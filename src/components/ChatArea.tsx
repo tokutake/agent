@@ -270,8 +270,14 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         </details>
                       )}
                       <Markdown content={msg.content} />
+                      {/* While streaming an assistant message, if no answer text has
+                          arrived yet (reasoning models think first), show a clear
+                          "Thinking…" state so it doesn't look frozen. */}
+                      {!isUser && isStreaming && index === session.messages.length - 1 && !msg.content.trim() && (
+                        <span className="thinking-state">Thinking…</span>
+                      )}
                       {/* Streaming cursor if it is the last message and is streaming */}
-                      {!isUser && isStreaming && index === session.messages.length - 1 && (
+                      {!isUser && isStreaming && index === session.messages.length - 1 && msg.content.trim() && (
                         <span className="streaming-cursor" />
                       )}
                     </>

@@ -37,8 +37,43 @@ interface StreamOptions {
   reasoningMode?: ReasoningMode;
   onChunk: (content: string) => void;
   onReasoning?: (reasoning: string) => void;
-  onDone: () => void;
+  onDone: (info?: { finishReason?: string | null }) => void;
   onError: (error: Error) => void;
+}
+
+/**
+ * Dispatch a parsed SSE payload: stream reasoning/content chunks, and surface
+ * any `error` event from OpenRouter. Free-model rate limits (and other
+ * mid-stream failures) arrive as a `choices`-less `data: {"error": {...}}`
+ * event rather than an HTTP error — without handling this, the UI hangs on
+ * "streaming" forever because neither onDone nor onError ever fires.
+ *
+ * Returns false when an error was surfaced, signalling the caller to stop.
+ */
+function dispatchPayload(
+  data: any,
+  callbacks: {
+    onChunk: (content: string) => void;
+    onReasoning?: (reasoning: string) => void;
+    onError: (error: Error) => void;
+  }
+): boolean {
+  if (data?.error) {
+    const raw = data.error;
+    const message =
+      (raw && raw.message) || (typeof raw === 'string' ? raw : 'Unknown API error');
+    callbacks.onError(new Error(message));
+    return false;
+  }
+  const reasoning = data?.choices?.[0]?.delta?.reasoning || '';
+  if (reasoning && callbacks.onReasoning) {
+    callbacks.onReasoning(reasoning);
+  }
+  const content = data?.choices?.[0]?.delta?.content || '';
+  if (content) {
+    callbacks.onChunk(content);
+  }
+  return true;
 }
 
 /**
@@ -76,7 +111,7 @@ export async function streamCompletion({
 }: StreamOptions) {
   try {
     const formattedMessages = [];
-    
+
     // Add system prompt first if available
     if (systemPrompt && systemPrompt.trim()) {
       formattedMessages.push({
@@ -94,14 +129,18 @@ export async function streamCompletion({
     );
 
     // Build the request body, adding the normalized `reasoning` param when set.
+    // When no explicit max_tokens is set, default to a generous cap. This model
+    // family (reasoning models) can emit very long answers on hard prompts, so a
+    // small cap like 4096 silently truncates the reply at the token limit.
+    const reasoningParam = buildReasoningParam(reasoningMode);
+    const safeMaxTokens = maxTokens && maxTokens > 0 ? maxTokens : 16384;
     const requestBody: Record<string, unknown> = {
       model,
       messages: formattedMessages,
       temperature,
-      max_tokens: maxTokens,
+      max_tokens: safeMaxTokens,
       stream: true,
     };
-    const reasoningParam = buildReasoningParam(reasoningMode);
     if (reasoningParam) {
       Object.assign(requestBody, reasoningParam);
     }
@@ -129,6 +168,7 @@ export async function streamCompletion({
 
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
+    let finishReason: string | null = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -136,7 +176,7 @@ export async function streamCompletion({
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      
+
       // Keep the last partial line in the buffer
       buffer = lines.pop() || '';
 
@@ -145,7 +185,7 @@ export async function streamCompletion({
         if (!cleanedLine) continue;
 
         if (cleanedLine === 'data: [DONE]') {
-          onDone();
+          onDone({ finishReason });
           return;
         }
 
@@ -153,17 +193,16 @@ export async function streamCompletion({
           try {
             const jsonStr = cleanedLine.slice(6);
             if (jsonStr === '[DONE]') {
-              onDone();
+              onDone({ finishReason });
               return;
             }
             const data = JSON.parse(jsonStr);
-            const reasoning = data.choices?.[0]?.delta?.reasoning || '';
-            if (reasoning && onReasoning) {
-              onReasoning(reasoning);
-            }
-            const content = data.choices?.[0]?.delta?.content || '';
-            if (content) {
-              onChunk(content);
+            // Track the latest finish_reason so we can report truncation.
+            const fr = data?.choices?.[0]?.finish_reason;
+            if (fr) finishReason = fr;
+            if (!dispatchPayload(data, { onChunk, onReasoning, onError })) {
+              onDone({ finishReason });
+              return;
             }
           } catch (e) {
             console.warn('Failed to parse SSE JSON line:', cleanedLine, e);
@@ -178,21 +217,16 @@ export async function streamCompletion({
         const jsonStr = buffer.slice(6).trim();
         if (jsonStr !== '[DONE]') {
           const data = JSON.parse(jsonStr);
-          const reasoning = data.choices?.[0]?.delta?.reasoning || '';
-          if (reasoning && onReasoning) {
-            onReasoning(reasoning);
-          }
-          const content = data.choices?.[0]?.delta?.content || '';
-          if (content) {
-            onChunk(content);
-          }
+          const fr = data?.choices?.[0]?.finish_reason;
+          if (fr) finishReason = fr;
+          dispatchPayload(data, { onChunk, onReasoning, onError });
         }
       } catch (e) {
         console.warn('Failed to parse remaining buffer:', buffer, e);
       }
     }
 
-    onDone();
+    onDone({ finishReason });
   } catch (error) {
     console.error('Error during streaming:', error);
     onError(error instanceof Error ? error : new Error(String(error)));

@@ -1182,3 +1182,18 @@ body {
 .reasoning-content .markdown-content {
   opacity: 0.85;
 }
+
+/* "Thinking…" placeholder shown while a reasoning model is still thinking
+   and no answer text has streamed in yet. */
+.thinking-state {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}

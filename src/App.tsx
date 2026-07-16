@@ -217,6 +217,29 @@ export default function App() {
     );
   };
 
+  // Append a note when a stream ended because it hit the max_tokens limit,
+  // so the user knows the reply was truncated rather than fully generated.
+  const appendTruncationNote = (sessionId: string, assistantId: string) => {
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id !== sessionId) return s;
+        return {
+          ...s,
+          messages: s.messages.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content:
+                    m.content +
+                    '\n\n*(Response truncated: reached the max token limit. Increase Max Tokens in Config to get the full answer.)*',
+                }
+              : m
+          ),
+        };
+      })
+    );
+  };
+
   // --- Messaging Operations ---
   const handleSendMessage = async (content: string) => {
     if (!activeSession || !apiKey.trim() || isStreaming) return;
@@ -297,7 +320,10 @@ export default function App() {
           })
         );
       },
-      onDone: () => {
+      onDone: (info) => {
+        if (info?.finishReason === 'length') {
+          appendTruncationNote(activeSession.id, assistantMessageId);
+        }
         setIsStreaming(false);
       },
       onError: (error) => {
@@ -391,7 +417,10 @@ export default function App() {
           })
         );
       },
-      onDone: () => {
+      onDone: (info) => {
+        if (info?.finishReason === 'length') {
+          appendTruncationNote(activeSession.id, assistantMessageId);
+        }
         setIsStreaming(false);
       },
       onError: (error) => {
@@ -488,7 +517,10 @@ export default function App() {
           })
         );
       },
-      onDone: () => {
+      onDone: (info) => {
+        if (info?.finishReason === 'length') {
+          appendTruncationNote(activeSession.id, assistantMessageId);
+        }
         setIsStreaming(false);
       },
       onError: (error) => {
