@@ -35,6 +35,7 @@ interface StreamOptions {
   temperature?: number;
   maxTokens?: number;
   reasoningMode?: ReasoningMode;
+  webSearch?: boolean;
   onChunk: (content: string) => void;
   onReasoning?: (reasoning: string) => void;
   onDone: (info?: { finishReason?: string | null }) => void;
@@ -104,6 +105,7 @@ export async function streamCompletion({
   temperature = 0.7,
   maxTokens,
   reasoningMode = 'auto',
+  webSearch = false,
   onChunk,
   onReasoning,
   onDone,
@@ -143,6 +145,11 @@ export async function streamCompletion({
     };
     if (reasoningParam) {
       Object.assign(requestBody, reasoningParam);
+    }
+    // OpenRouter's built-in Web Search plugin: the model fetches live results
+    // and weaves them into the reply. No extra API key or provider needed.
+    if (webSearch) {
+      requestBody.plugins = [{ id: 'web' }];
     }
 
     const response = await fetch(`${BASE_URL}/chat/completions`, {

@@ -30,6 +30,7 @@ export interface ChatSession {
   temperature: number;
   maxTokens?: number;
   reasoningMode: ReasoningMode;
+  webSearch: boolean;
   createdAt: number;
 }
 

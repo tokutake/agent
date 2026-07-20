@@ -35,6 +35,7 @@ export default function App() {
         systemPrompt: 'You are Pythia, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
         temperature: 0.7,
         reasoningMode: 'auto',
+        webSearch: false,
         createdAt: Date.now(),
       },
     ];
@@ -144,6 +145,7 @@ export default function App() {
       systemPrompt: activeSession?.systemPrompt || 'You are Pythia, a helpful and highly creative AI assistant. Provide concise, clear, and comprehensive answers. Format math and code elements beautifully.',
       temperature: activeSession?.temperature ?? 0.7,
       reasoningMode: activeSession?.reasoningMode || 'auto',
+      webSearch: activeSession?.webSearch || false,
       createdAt: Date.now(),
     };
     setSessions((prev) => [newSession, ...prev]);
@@ -164,6 +166,7 @@ export default function App() {
             systemPrompt: 'You are Pythia, a helpful and highly creative AI assistant.',
             temperature: 0.7,
             reasoningMode: 'auto',
+            webSearch: false,
             createdAt: Date.now(),
           },
         ];
@@ -214,6 +217,12 @@ export default function App() {
   const handleReasoningChange = (reasoningMode: ReasoningMode) => {
     setSessions((prev) =>
       prev.map((s) => (s.id === activeSessionId ? { ...s, reasoningMode } : s))
+    );
+  };
+
+  const handleWebSearchChange = (webSearch: boolean) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === activeSessionId ? { ...s, webSearch } : s))
     );
   };
 
@@ -294,6 +303,7 @@ export default function App() {
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
       reasoningMode: activeSession.reasoningMode,
+      webSearch: activeSession.webSearch,
       onReasoning: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -391,6 +401,7 @@ export default function App() {
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
       reasoningMode: activeSession.reasoningMode,
+      webSearch: activeSession.webSearch,
       onReasoning: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -491,6 +502,7 @@ export default function App() {
       temperature: activeSession.temperature,
       maxTokens: activeSession.maxTokens,
       reasoningMode: activeSession.reasoningMode,
+      webSearch: activeSession.webSearch,
       onReasoning: (chunk) => {
         setSessions((prev) =>
           prev.map((s) => {
@@ -587,6 +599,8 @@ export default function App() {
         onMaxTokensChange={handleMaxTokensChange}
         reasoningMode={activeSession?.reasoningMode || 'auto'}
         onReasoningChange={handleReasoningChange}
+        webSearch={activeSession?.webSearch || false}
+        onWebSearchChange={handleWebSearchChange}
         models={models}
         isLoadingModels={isLoadingModels}
         onRefreshModels={() => handleLoadModels()}

@@ -17,6 +17,8 @@ interface SettingsPanelProps {
   onMaxTokensChange: (tokens: number | undefined) => void;
   reasoningMode: ReasoningMode;
   onReasoningChange: (mode: ReasoningMode) => void;
+  webSearch: boolean;
+  onWebSearchChange: (enabled: boolean) => void;
   models: OpenRouterModel[];
   isLoadingModels: boolean;
   onRefreshModels: () => void;
@@ -36,6 +38,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onMaxTokensChange,
   reasoningMode,
   onReasoningChange,
+  webSearch,
+  onWebSearchChange,
   models,
   isLoadingModels,
   onRefreshModels,
@@ -282,6 +286,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </select>
               <span className="settings-description">
                 Controls the model's actual thinking. "Auto" lets the model decide; "Off" disables reasoning; the rest set reasoning effort. Only effective on reasoning-capable models.
+              </span>
+            </div>
+
+            {/* Web Search toggle */}
+            <div className="settings-group">
+              <div className="settings-label">
+                <span>Web Search</span>
+                <label className="web-search-switch">
+                  <input
+                    type="checkbox"
+                    checked={webSearch}
+                    onChange={(e) => onWebSearchChange(e.target.checked)}
+                  />
+                  <span className="web-search-slider" />
+                </label>
+              </div>
+              <span className="settings-description">
+                When enabled, the model fetches live web results via OpenRouter's built-in search plugin (no extra API key needed) and weaves them into its reply. Toggle on when you need up-to-date info.
               </span>
             </div>
 
